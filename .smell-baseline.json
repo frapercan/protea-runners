@@ -1,0 +1,9 @@
+{
+  "thresholds": {
+    "file_loc": 800,
+    "class_loc": 500,
+    "method_loc": 60,
+    "param_count": 6
+  },
+  "offenders": []
+}
