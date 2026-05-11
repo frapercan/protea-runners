@@ -5,6 +5,19 @@ stack. Each sub-module implements the `ExperimentRunner` ABC from
 [`protea-contracts`](https://github.com/frapercan/protea-contracts)
 and registers via the `protea.runners` `entry_points` group.
 
+## Install
+
+```bash
+pip install protea-runners
+```
+
+Or, to install a specific runner with its optional heavy dependencies:
+
+```bash
+pip install "protea-runners[lightgbm]"   # LightGBM extras
+pip install "protea-runners[all]"         # all runner extras
+```
+
 The runner contract is `fit` → `evaluate` → `export`: take a frozen
 dataset URI, train a model, score it against a held-out split,
 publish the produced artefact under a canonical layout. PROTEA's
@@ -101,6 +114,39 @@ poetry run pytest             # 19 tests, ~0.1s
 poetry run ruff check .
 poetry run mypy --strict src
 ```
+
+## Contributing
+
+Contributions are welcome from research institutions and individual developers.
+
+**Branch strategy:** all changes target `develop`; `main` tracks stable
+releases only.
+
+```bash
+git clone https://github.com/frapercan/protea-runners.git
+cd protea-runners
+git checkout develop
+git checkout -b feature/my-runner
+
+poetry install
+
+# Make your changes, then verify locally:
+poetry run pytest             # 19 tests, < 1 s
+poetry run ruff check .
+poetry run mypy --strict src
+
+# Open a pull request targeting develop
+```
+
+Key constraints:
+- **Fail loudly.** If a runner method is not yet implemented, raise
+  `NotImplementedError` with a precise pointer to the active code path
+  and the migration task (e.g., `"active pipeline: protea-reranker-lab; migrates here in F2A.7"`).
+- **Entry-point reservation.** New runners must register their entry
+  point in `pyproject.toml` before the implementation is complete.
+  Reserving the name early prevents accidental reuse.
+- **No runtime deps on protea-core.** This package must stay installable
+  without the full PROTEA platform.
 
 ## Documentation
 
