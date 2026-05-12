@@ -5,6 +5,18 @@ stack. Each sub-module implements the `ExperimentRunner` ABC from
 [`protea-contracts`](https://github.com/frapercan/protea-contracts)
 and registers via the `protea.runners` `entry_points` group.
 
+**Status:** v0.0.1 (experimental, pre-1.0; stubs ship before implementations to reserve entry-point names).
+See the [PROTEA stack architecture](https://github.com/frapercan/PROTEA#repositories-in-the-protea-stack) for where this package fits.
+
+**Entry points exposed:** `protea.runners` group: `lightgbm`, `knn`, `baseline`.
+
+**Smoke test:**
+```bash
+pip install protea-runners
+python -c "from protea_runners.lightgbm import plugin; print(plugin.name)"
+# lightgbm
+```
+
 ## Install
 
 ```bash
@@ -170,9 +182,9 @@ Single source of truth: [`docs/source/_data/stack.yaml`](https://github.com/frap
 | [PROTEA](https://github.com/frapercan/PROTEA) | Platform | `active` | Backend platform. Hosts the ORM, job queue, FastAPI surface, frontend, and orchestration. |
 | [protea-contracts](https://github.com/frapercan/protea-contracts) | Contracts | `beta` | Shared contract surface. ABCs, pydantic payloads, feature schema, schema_sha. Imported by every other repo. |
 | [protea-method](https://github.com/frapercan/protea-method) | Inference | `skeleton` | Pure inference path (KNN, feature compute, reranker apply). Target of the F2C extraction. Bind-mounted by the LAFA containers. |
-| [protea-sources](https://github.com/frapercan/protea-sources) | Source plugin | `skeleton` | Annotation source plugins (GOA, QuickGO, UniProt). Discovered via Python entry_points. |
-| **protea-runners** (this repo) | Runner plugin | `skeleton` | Experiment runner plugins (LightGBM lab, KNN baseline, future GNN). Discovered via Python entry_points. |
-| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `skeleton` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM3-C). Discovered via Python entry_points. |
+| [protea-sources](https://github.com/frapercan/protea-sources) | Source plugin | `active` | Annotation source plugins (GOA, QuickGO, UniProt, InterPro). Discovered via Python entry_points. |
+| **protea-runners** (this repo) | Runner plugin | `beta` | Experiment runner plugins (LightGBM lab, KNN baseline, future GNN). Entry points reserved; implementations migrate in F2A.7/F2C. |
+| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `active` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM3-C). Discovered via Python entry_points. |
 | [protea-reranker-lab](https://github.com/frapercan/protea-reranker-lab) | Lab | `active` | LightGBM reranker training lab. Pulls datasets from PROTEA, trains boosters, publishes them back via /reranker-models/import-by-reference. |
 | [cafaeval-protea](https://github.com/frapercan/cafaeval-protea) | Evaluator | `active` | Standalone fork of cafaeval (CAFA-evaluator-PK) with the PK-coverage fix and a bit-exact parity guarantee against the upstream. |
 
