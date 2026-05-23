@@ -48,7 +48,8 @@ Operational notes
 - **Selective re-ranking**. The current production policy applies
   the re-ranker only to category / aspect cells where it improves
   over the KNN baseline; the rest fall back to KNN automatically.
-  See the v18-selective configuration history for details.
+  The selective-deploy configuration is tracked in the experiment
+  axis records for the relevant benchmark runs.
 
 API reference
 -------------

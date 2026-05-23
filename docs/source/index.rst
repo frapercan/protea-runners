@@ -23,7 +23,7 @@ still live in ``protea-core/operations/predict_go_terms.py``
 `protea-reranker-lab <https://github.com/frapercan/protea-reranker-lab>`_
 repository (LightGBM training).
 
-The migration plan in master plan v3:
+The migration plan:
 
 - **F2A.7**: ``lightgbm`` runner absorbs ``protea-reranker-lab`` and
   becomes the canonical home for booster training. After F2A.7,

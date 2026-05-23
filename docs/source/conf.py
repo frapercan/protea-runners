@@ -39,15 +39,19 @@ autodoc_typehints = "description"
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
-# When the lightgbm runner absorbs the lab in F2A.7, its heavy deps
-# (lightgbm, pandas, scikit-learn) live behind extras and need
-# mocking here. None are installed today; mock list ready.
+# protea_contracts is a git-dep not installed in the docs venv.
+# The heavy ML extras (lightgbm, pandas, scikit-learn) also live
+# behind extras and are mocked here.  When F2A.7 lands and the deps
+# are declared as proper package extras, this list shrinks.
 autodoc_mock_imports = [
+    "protea_contracts",
     "lightgbm",
     "pandas",
     "sklearn",
     "faiss",
     "torch",
+    "numpy",
+    "pyarrow",
 ]
 
 intersphinx_mapping = {
