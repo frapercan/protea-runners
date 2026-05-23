@@ -1,21 +1,75 @@
 # protea-runners
 
-Experiment runner plugins for the [PROTEA](https://github.com/frapercan/protea)
-stack. Each sub-module implements the `ExperimentRunner` ABC from
+Experiment runner plugins for the
+[PROTEA](https://github.com/frapercan/PROTEA) stack.
+Each sub-module implements the `ExperimentRunner` ABC from
 [`protea-contracts`](https://github.com/frapercan/protea-contracts)
-and registers via the `protea.runners` `entry_points` group.
+and registers via the `protea.runners` `entry_points` group so that
+`protea-core` can discover and dispatch runners by name at runtime
+without a hard import dependency on this package.
 
-**Status:** v0.0.1 (experimental, pre-1.0; stubs ship before implementations to reserve entry-point names).
-See the [PROTEA stack architecture](https://github.com/frapercan/PROTEA#repositories-in-the-protea-stack) for where this package fits.
+**Status:** v0.0.1 (beta, pre-1.0). Three contract-surface stubs ship
+today to reserve entry-point names ahead of the implementations
+landing in F2A.7 (LightGBM) and F2C (KNN).
 
-**Entry points exposed:** `protea.runners` group: `lightgbm`, `knn`, `baseline`.
+<!-- protea-stack:start -->
 
-**Smoke test:**
-```bash
-pip install protea-runners
-python -c "from protea_runners.lightgbm import plugin; print(plugin.name)"
-# lightgbm
-```
+## Repositories in the PROTEA stack
+
+Single source of truth:
+[`docs/source/_data/stack.yaml`](https://github.com/frapercan/PROTEA/blob/develop/docs/source/_data/stack.yaml)
+in PROTEA. Run `python scripts/sync_stack.py` to regenerate this block.
+
+| Repo | Role | Status | Summary |
+|------|------|--------|---------|
+| [PROTEA](https://github.com/frapercan/PROTEA) | Platform | `active` | Backend platform. Hosts the ORM, job queue, FastAPI surface, frontend, and orchestration. |
+| [protea-contracts](https://github.com/frapercan/protea-contracts) | Contracts | `beta` | Shared contract surface. ABCs, pydantic payloads, feature schema, schema_sha. Imported by every other repo. |
+| [protea-method](https://github.com/frapercan/protea-method) | Inference | `active` | Pure inference path (KNN, feature compute, reranker apply). Target of the F2C extraction. Bind-mounted by the LAFA containers. |
+| [protea-sources](https://github.com/frapercan/protea-sources) | Source plugin | `active` | Annotation source plugins (GOA, QuickGO, UniProt, InterPro). Discovered via Python entry_points. |
+| **protea-runners** (this repo) | Runner plugin | `beta` | Experiment runner plugins (LightGBM lab, KNN baseline, future GNN). Entry points reserved; implementations migrate in F2A.7/F2C. |
+| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `active` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM3-C). Discovered via Python entry_points. |
+| [protea-reranker-lab](https://github.com/frapercan/protea-reranker-lab) | Lab | `active` | LightGBM reranker training lab. Pulls datasets from PROTEA, trains boosters, publishes them back via /reranker-models/import-by-reference. |
+| [cafaeval-protea](https://github.com/frapercan/cafaeval-protea) | Evaluator | `active` | Standalone fork of cafaeval (CAFA-evaluator-PK) with the PK-coverage fix and a bit-exact parity guarantee against the upstream. |
+
+<!-- protea-stack:end -->
+
+---
+
+## What and why
+
+A PROTEA experiment run references a runner by name (`lightgbm`, `knn`,
+`baseline`). The platform resolves that name to a Python object via
+`importlib.metadata.entry_points(group="protea.runners")["<name>"].load()`
+and calls the standard `fit` / `evaluate` / `export` lifecycle.
+This package owns those entry-point registrations and the ABC-compliant
+classes behind them.
+
+Keeping runners in a dedicated package has three advantages:
+
+1. **Isolation.** Heavy ML deps (LightGBM, CUDA libraries) are
+   declared as optional extras here and never pulled in by
+   `protea-core` at install time.
+2. **Entry-point reservation.** A name registered today cannot be
+   accidentally claimed by another package. When the implementation
+   migrates here, the dispatch layer does not change at all.
+3. **Fail loudly.** Each stub raises `NotImplementedError` with a
+   precise pointer to the active code path and the migration task.
+   Mis-routed dispatchers fail immediately with an actionable message,
+   not a silent no-op.
+
+---
+
+## Runners at a glance
+
+| Plugin | Role | Status | Active code path until migration |
+|--------|------|--------|----------------------------------|
+| `lightgbm` | LightGBM reranker training | stub | [`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); migrates in F2A.7 |
+| `knn` | KNN-only baseline (no reranker) | stub | `protea-core.PredictGOTermsBatchOperation`; migrates in F2C |
+| `baseline` | Reference baselines (naive frequency, BLAST) | stub | reserved for F-EXP narrative work |
+| `gnn` | R-GCN over GO-DAG (PROTEA-DL) | future | post-defensa |
+| `retrieval_neural` | Neural retrieval reranker | future | post-defensa |
+
+---
 
 ## Install
 
@@ -23,80 +77,105 @@ python -c "from protea_runners.lightgbm import plugin; print(plugin.name)"
 pip install protea-runners
 ```
 
-Or, to install a specific runner with its optional heavy dependencies:
+With optional heavy extras for the LightGBM runner (available once F2A.7 lands):
 
 ```bash
-pip install "protea-runners[lightgbm]"   # LightGBM extras
-pip install "protea-runners[all]"         # all runner extras
+pip install "protea-runners[lightgbm]"
+pip install "protea-runners[all]"
 ```
 
-The runner contract is `fit` → `evaluate` → `export`: take a frozen
-dataset URI, train a model, score it against a held-out split,
-publish the produced artefact under a canonical layout. PROTEA's
-`ExperimentRun` row tracks the lifecycle and resolves the runner by
-name.
+The package is dependency-light today: only `protea-contracts`,
+`numpy`, and `pyarrow`. No GPU or ML framework is pulled in at
+import time.
 
-## Status — three contract-surface stubs today
+---
 
-| Sub-module | Runner | Status | Real implementation lives in |
-|------------|--------|--------|------------------------------|
-| `protea_runners.lightgbm` | LightGBM reranker training | **stub** | [`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); migrates here in F2A.7 |
-| `protea_runners.knn` | KNN-only baseline (no reranker) | **stub** | PROTEA's `PredictGOTermsBatchOperation`; migrates here in F2C |
-| `protea_runners.baseline` | Reference baselines (naive frequency, BLAST) | **stub** | not yet implemented; reserved for F-EXP narrative work |
-| `protea_runners.gnn` | R-GCN over GO-DAG (PROTEA-DL) | future | post-defensa |
-| `protea_runners.retrieval_neural` | Neural retrieval reranker | future | post-defensa |
+## Quick example
 
-Each stub plugin is an ABC-compliant subclass with `name` set, but
-its `fit` / `evaluate` / `export` methods raise
-`NotImplementedError` with a message naming the active code path
-and the master-plan task that will move the implementation here.
-Future grep on `LightgbmRunner.fit` lands the reader at the
-migration-plan line in the docstring.
+Verify that entry-points are discoverable:
 
 ```python
-from protea_runners.lightgbm import plugin as lightgbm
+from importlib.metadata import entry_points
 
-lightgbm.fit({}, "s3://bucket/dataset/", emit=lambda *a, **k: None)
+runners = entry_points(group="protea.runners")
+print([r.name for r in runners])
+# ['lightgbm', 'knn', 'baseline']
+
+plugin = runners["lightgbm"].load()
+print(plugin.name)
+# lightgbm
+```
+
+Call a lifecycle method (currently stubs):
+
+```python
+from protea_runners.lightgbm import plugin as lightgbm_runner
+
+lightgbm_runner.fit({}, "s3://bucket/dataset/", emit=lambda *a, **k: None)
 # NotImplementedError: LightgbmRunner.fit is a contract-surface stub.
 # The active training pipeline lives in the protea-reranker-lab repo;
-# absorbing it into this plugin is F2A.7 of master plan v3.
+# absorbing it into this plugin is F2A.7 of the master plan.
 ```
+
+The runner contract: `fit` takes a spec dict and a frozen dataset URI,
+trains or prepares a model, and returns a `RunResult`. `evaluate` takes
+a model URI and an eval dataset URI and returns an `EvalResult` with
+per-aspect CAFA Fmax, AuPRC, and coverage. `export` serialises the
+artefact to an `ArtifactStore` URI and returns a provenance dict.
+
+---
 
 ## How experiment runs are dispatched
 
-1. The user submits an `ExperimentRun` row via PROTEA's API
+1. A user submits an `ExperimentRun` row via `POST /experiments/runs`,
    referencing a runner by name (e.g. `lightgbm`).
 2. `protea-core` resolves the runner via
    `entry_points(group="protea.runners")["lightgbm"].load()`.
-3. The runner gets a `spec` dict, a frozen `dataset_uri`, and an
+3. The runner receives a `spec` dict, a frozen `dataset_uri`, and an
    `emit` callback. It trains, evaluates, and exports under the
    contract.
-4. Results land back as a new `RerankerModel` (or equivalent) plus
-   the `ExperimentRun` record metadata.
+4. Results land as a new `RerankerModel` row (or equivalent) plus the
+   `ExperimentRun` lifecycle metadata.
 
-This dispatch is in place today via the F2B endpoints (see
-[`GET /runners`](https://protea.readthedocs.io/) for the runtime
-discovery surface). What's missing is the **inside** of `fit`,
-`evaluate`, `export` for each runner — that lands as part of F2A.7
-(LightGBM) and F2C (KNN).
+The dispatch is in place via the F2B endpoints. What is missing is the
+inside of `fit`, `evaluate`, `export` for each runner: that lands in
+F2A.7 (LightGBM) and F2C (KNN).
 
-## Why the stubs ship before the implementations
+---
 
-Two reasons:
+## Architecture
 
-1. **Entry-point reservation.** A name registered today cannot be
-   accidentally reused by another package. When `lightgbm` actually
-   migrates here, the entry-point already exists; the migration is
-   purely a code change inside the plugin module.
-2. **Failure mode is loud.** Calling `lightgbm.fit(...)` today
-   raises a `NotImplementedError` with a precise pointer, not an
-   `AttributeError` or a silent no-op. Mis-routed dispatchers fail
-   immediately with actionable error messages.
+```
+protea-runners/
+    src/
+        protea_runners/
+            __init__.py          # package version
+            lightgbm/
+                __init__.py      # LightgbmRunner + plugin instance
+            knn/
+                __init__.py      # KnnRunner + plugin instance
+            baseline/
+                __init__.py      # BaselineRunner + plugin instance
+    docs/source/
+        conf.py                  # Sphinx config (shibuya theme)
+        index.rst                # top-level docs page
+        runners/                 # one RST per plugin, with autodoc
+        contributing.rst         # how to add a runner
+    pyproject.toml               # entry_point registrations + extras
+    tests/                       # ABC compliance + discoverability tests
+```
+
+The contract boundary: `protea_contracts.ExperimentRunner` is the ABC;
+`RunResult` and `EvalResult` are the typed return shapes. This package
+must stay installable without the full PROTEA platform. It imports
+nothing from `protea-core`.
+
+---
 
 ## Adding a new runner
 
-The full guide lives in the Sphinx docs under
-`docs/source/contributing.rst`. Five-step summary:
+The full guide is in the Sphinx docs under `docs/source/contributing.rst`.
+Five-step summary:
 
 1. Create `src/protea_runners/<your_name>/__init__.py`.
 2. Subclass `ExperimentRunner` and implement `fit` + `evaluate` +
@@ -107,7 +186,22 @@ The full guide lives in the Sphinx docs under
    group named after the plugin.
 5. Mirror the existing test files (`tests/test_<your_name>.py`)
    covering instance type, ABC compliance, name attribute,
-   discoverability, and the lifecycle stub semantics.
+   discoverability, and lifecycle stub semantics.
+
+Key constraints:
+
+- **Fail loudly.** If a runner method is not yet implemented, raise
+  `NotImplementedError` with a precise pointer to the active code path
+  and the migration task.
+- **Entry-point reservation.** Register the entry point in
+  `pyproject.toml` before the implementation is complete.
+- **No runtime deps on protea-core.** This package must stay
+  installable without the full PROTEA platform.
+- **Schema sha is mandatory** for runners that produce a reranker
+  booster. Store `feature_schema_sha` on the `RunResult` so the
+  platform can validate schema alignment at inference time.
+
+---
 
 ## Roadmap
 
@@ -115,24 +209,33 @@ The full guide lives in the Sphinx docs under
 |-------|------|---------|
 | F2A.7 | LightGBM training migration | `protea-reranker-lab` absorbed into `protea_runners.lightgbm`. Real `fit`/`evaluate`/`export`. |
 | F2C.1 | `protea-method` extraction (KNN) | KNN inference path moves to `protea-method`; `protea_runners.knn` becomes a thin wrapper. |
-| F-EXP | Narrative baselines | `protea_runners.baseline` gets naive-frequency + BLAST implementations for ablation tables. |
+| F-EXP | Narrative baselines | `protea_runners.baseline` gets naive-frequency and BLAST implementations for ablation tables. |
 | Post-defensa | GNN, retrieval-neural | New plugin modules for PROTEA-DL research extensions. |
+
+---
 
 ## Development
 
 ```bash
 poetry install
-poetry run pytest             # 19 tests, ~0.1s
+poetry run pytest             # 19 tests, < 1 s
 poetry run ruff check .
 poetry run mypy --strict src
 ```
 
+Sphinx docs build:
+
+```bash
+poetry install --with docs
+cd docs && make html
+# Output: docs/build/html/index.html
+```
+
+---
+
 ## Contributing
 
-Contributions are welcome from research institutions and individual developers.
-
-**Branch strategy:** all changes target `develop`; `main` tracks stable
-releases only.
+All changes target `develop`; `main` tracks stable releases only.
 
 ```bash
 git clone https://github.com/frapercan/protea-runners.git
@@ -142,50 +245,19 @@ git checkout -b feature/my-runner
 
 poetry install
 
-# Make your changes, then verify locally:
-poetry run pytest             # 19 tests, < 1 s
+# Make changes, then verify locally:
+poetry run pytest
 poetry run ruff check .
 poetry run mypy --strict src
 
 # Open a pull request targeting develop
 ```
 
-Key constraints:
-- **Fail loudly.** If a runner method is not yet implemented, raise
-  `NotImplementedError` with a precise pointer to the active code path
-  and the migration task (e.g., `"active pipeline: protea-reranker-lab; migrates here in F2A.7"`).
-- **Entry-point reservation.** New runners must register their entry
-  point in `pyproject.toml` before the implementation is complete.
-  Reserving the name early prevents accidental reuse.
-- **No runtime deps on protea-core.** This package must stay installable
-  without the full PROTEA platform.
+Contributions are welcome from research institutions and individual
+developers.
 
-## Documentation
-
-Full Sphinx documentation in `docs/source/`. Each runner has its
-own page documenting current status, the data shape it expects,
-the artefacts it produces, and pointers to the active
-implementation while the migration is pending.
+---
 
 ## License
 
 MIT. See `LICENSE`.
-
-<!-- protea-stack:start -->
-
-## Repositories in the PROTEA stack
-
-Single source of truth: [`docs/source/_data/stack.yaml`](https://github.com/frapercan/PROTEA/blob/develop/docs/source/_data/stack.yaml) in PROTEA. Run `python scripts/sync_stack.py` to regenerate this block.
-
-| Repo | Role | Status | Summary |
-|------|------|--------|---------|
-| [PROTEA](https://github.com/frapercan/PROTEA) | Platform | `active` | Backend platform. Hosts the ORM, job queue, FastAPI surface, frontend, and orchestration. |
-| [protea-contracts](https://github.com/frapercan/protea-contracts) | Contracts | `beta` | Shared contract surface. ABCs, pydantic payloads, feature schema, schema_sha. Imported by every other repo. |
-| [protea-method](https://github.com/frapercan/protea-method) | Inference | `skeleton` | Pure inference path (KNN, feature compute, reranker apply). Target of the F2C extraction. Bind-mounted by the LAFA containers. |
-| [protea-sources](https://github.com/frapercan/protea-sources) | Source plugin | `active` | Annotation source plugins (GOA, QuickGO, UniProt, InterPro). Discovered via Python entry_points. |
-| **protea-runners** (this repo) | Runner plugin | `beta` | Experiment runner plugins (LightGBM lab, KNN baseline, future GNN). Entry points reserved; implementations migrate in F2A.7/F2C. |
-| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `active` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM3-C). Discovered via Python entry_points. |
-| [protea-reranker-lab](https://github.com/frapercan/protea-reranker-lab) | Lab | `active` | LightGBM reranker training lab. Pulls datasets from PROTEA, trains boosters, publishes them back via /reranker-models/import-by-reference. |
-| [cafaeval-protea](https://github.com/frapercan/cafaeval-protea) | Evaluator | `active` | Standalone fork of cafaeval (CAFA-evaluator-PK) with the PK-coverage fix and a bit-exact parity guarantee against the upstream. |
-
-<!-- protea-stack:end -->
