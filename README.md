@@ -8,9 +8,11 @@ and registers via the `protea.runners` `entry_points` group so that
 `protea-core` can discover and dispatch runners by name at runtime
 without a hard import dependency on this package.
 
-**Status:** v0.0.1 (beta, pre-1.0). Three contract-surface stubs ship
-today to reserve entry-point names ahead of the implementations
-landing in F2A.7 (LightGBM) and F2C (KNN).
+**Status:** v0.0.1, production. Entry points `lightgbm`, `knn`, and `baseline`
+are registered and discoverable. The implementations are contract-surface stubs;
+the active LightGBM training pipeline lives in
+[`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab) and
+migrates here in F2A.7.
 
 <!-- protea-stack:start -->
 
