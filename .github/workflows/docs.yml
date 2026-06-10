@@ -2,6 +2,9 @@ name: docs
 
 on:
   push:
+    branches:
+      - develop
+      - main
     paths:
       - "docs/**"
       - "src/**"
@@ -13,6 +16,16 @@ on:
       - "src/**"
       - "pyproject.toml"
       - ".github/workflows/docs.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment, cancelling in-progress runs for the same ref.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -29,9 +42,20 @@ jobs:
         run: poetry install --with docs
       - name: Build HTML (warnings are errors)
         run: poetry run make -C docs clean html
-      - name: Upload built site
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: protea-runners-docs
           path: docs/build/html
-          if-no-files-found: error
+
+  deploy:
+    # Only publish from the default branch, never from pull requests.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
