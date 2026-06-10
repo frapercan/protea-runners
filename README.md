@@ -152,6 +152,7 @@ protea-runners/
     src/
         protea_runners/
             __init__.py          # package version
+            _base.py             # StubRunner shared base (Extract Superclass)
             lightgbm/
                 __init__.py      # LightgbmRunner + plugin instance
             knn/
@@ -160,8 +161,11 @@ protea-runners/
                 __init__.py      # BaselineRunner + plugin instance
     docs/source/
         conf.py                  # Sphinx config (shibuya theme)
-        index.rst                # top-level docs page
+        index.rst                # overview / landing page
+        quickstart.rst           # install + discover + dispatch
+        contract.rst             # the runner contract + stub base
         runners/                 # one RST per plugin, with autodoc
+        api.rst                  # consolidated API reference
         contributing.rst         # how to add a runner
     pyproject.toml               # entry_point registrations + extras
     tests/                       # ABC compliance + discoverability tests
@@ -220,9 +224,10 @@ Key constraints:
 
 ```bash
 poetry install
-poetry run pytest             # 19 tests, < 1 s
+poetry run pytest             # contract + discoverability suites, < 1 s
 poetry run ruff check .
-poetry run mypy --strict src
+poetry run mypy --strict src tests
+poetry run python scripts/check_smells.py --target src
 ```
 
 Sphinx docs build:
@@ -256,10 +261,11 @@ poetry run mypy --strict src
 ```
 
 Contributions are welcome from research institutions and individual
-developers.
+developers. Notable changes are tracked in
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See [`LICENSE`](LICENSE).
