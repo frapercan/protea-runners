@@ -1,89 +1,105 @@
 protea-runners
 ==============
 
-Experiment runner plugins for the PROTEA stack. Each sub-module
-implements the :class:`protea_contracts.ExperimentRunner` ABC and
-registers via the ``protea.runners`` ``entry_points`` group.
+``protea-runners`` is the experiment-runner layer of the PROTEA stack. It
+holds the training and evaluation runners that PROTEA dispatches when a
+user submits an experiment: the LightGBM re-ranker trainer, the KNN-only
+baseline, and the reference baselines used as the floor in ablations.
 
-A runner abstracts the lifecycle of a model: ``fit`` (train or
-prepare), ``evaluate`` (compute metrics on a held-out split),
-``export`` (persist the trained artefact). The contract normalises
-the return shapes so ``protea-core`` can record provenance uniformly
-across runners and reproducibility tools can replay any past run.
+The problem it solves
+---------------------
+
+PROTEA needs to grow new ways of training and scoring models (a new
+re-ranker objective, a new baseline, a future neural head) without
+editing the platform every time one is added. A runner is therefore a
+*plugin*: a small class that implements one fixed interface and announces
+itself through a Python ``entry_points`` group. ``protea-core`` discovers
+runners by name at runtime and drives them through a uniform lifecycle.
+It never imports this package directly, so adding or changing a runner is
+a change here, not in the platform.
+
+Three properties fall out of that design:
+
+- **Isolation.** Heavy ML dependencies (LightGBM, CUDA libraries) are
+  declared as optional extras in this package and never pulled into a
+  ``protea-core`` install.
+- **Reservation.** A runner name registered today cannot be claimed by
+  another package. When an implementation migrates in, the dispatch path
+  does not change at all.
+- **Fail-loud stubs.** A runner that is registered but not yet
+  implemented raises a precise error pointing at the active code path and
+  the migration task, so a mis-routed dispatch fails fast instead of
+  no-op'ing.
 
 Status
 ------
 
-The three plugins shipped today are **contract-surface stubs**: they
-subclass the ABC, register through ``entry_points``, and pass the
-discoverability tests, but their lifecycle methods raise
-``NotImplementedError``. The active inference and training paths
-still live in ``protea-core/operations/predict_go_terms.py``
-(KNN, baseline) and the standalone
-`protea-reranker-lab <https://github.com/frapercan/protea-reranker-lab>`_
-repository (LightGBM training).
-
-The migration plan:
-
-- **F2A.7**: ``lightgbm`` runner absorbs ``protea-reranker-lab`` and
-  becomes the canonical home for booster training. After F2A.7,
-  ``protea-runners[lightgbm]`` provides the trainer.
-- **F2C.1**: ``protea-method`` extraction lifts the inference core
-  out of ``protea-core``; the ``knn`` runner then consumes it
-  cleanly without depending on the platform.
-
-At a glance
------------
+The three runners shipped today are **contract-surface stubs**. They
+subclass the contract, register through ``entry_points``, and pass the
+discoverability and compliance suites, but their lifecycle methods raise
+``NotImplementedError``. The active training and inference code still
+lives elsewhere and migrates into the plugins on a schedule:
 
 .. list-table::
    :header-rows: 1
-   :widths: 16 26 22 36
+   :widths: 16 30 18 36
 
-   * - Plugin
+   * - Runner
      - Role
      - Status
      - Active code path (until migration)
-   * - :doc:`knn <runners/knn>`
+   * - :doc:`lightgbm <runners>`
+     - LightGBM re-ranker training
+     - Stub (real path in F2A.7)
+     - ``protea-reranker-lab`` standalone repository
+   * - :doc:`knn <runners>`
      - KNN-only baseline (no re-ranker)
      - Stub (real path in F2C)
-     - ``protea-core.predict_go_terms_batch``
-   * - :doc:`baseline <runners/baseline>`
-     - Random / null baseline for ablations
-     - Stub
-     - n/a (future)
-   * - :doc:`lightgbm <runners/lightgbm>`
-     - LightGBM re-ranker
-     - Stub (real path in F2A.7)
-     - ``protea-reranker-lab`` standalone repo
+     - ``protea-core.PredictGOTermsBatchOperation``
+   * - :doc:`baseline <runners>`
+     - Reference baselines (naive frequency, BLAST)
+     - Stub (reserved)
+     - none yet; reserved for the F-EXP narrative work
 
-Install
--------
+What lives here
+---------------
 
-.. code-block:: bash
+::
 
-   pip install protea-runners
+    protea-runners/
+        src/protea_runners/
+            __init__.py          package version
+            _base.py             StubRunner shared base (Extract Superclass)
+            lightgbm/__init__.py LightgbmRunner + plugin instance
+            knn/__init__.py      KnnRunner + plugin instance
+            baseline/__init__.py BaselineRunner + plugin instance
+        docs/source/             this documentation
+        pyproject.toml           entry-point registrations + extras
+        tests/                   compliance + discoverability suites
 
-The package is dependency-light today (only ``protea-contracts``);
-extras for the heavy ML stack land alongside F2A.7.
+The whole package depends only on ``protea-contracts`` for the
+:class:`~protea_contracts.ExperimentRunner` interface and the typed
+``RunResult`` / ``EvalResult`` return shapes. It imports nothing from
+``protea-core``, which is what keeps it installable on its own.
 
-Discovery
----------
+Where to go next
+----------------
 
-``protea-core`` resolves a runner by name through
-``importlib.metadata.entry_points``::
-
-    from importlib.metadata import entry_points
-    plugin = entry_points(group="protea.runners")["lightgbm"].load()
-    plugin.fit(spec=...)  # raises NotImplementedError until F2A.7
-
-Contents
---------
+- :doc:`overview` explains the runner contract, the shared base, and how
+  ``entry_points`` discovery works.
+- :doc:`quickstart` installs the package and runs a real discovery and
+  dispatch example.
+- :doc:`runners` documents each runner (purpose, configuration, status)
+  and how to add one of your own.
+- :doc:`contributing` covers the development workflow and CI gates.
+- :doc:`reference/index` is the generated API documentation.
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
 
+   overview
    quickstart
-   contract
-   runners/index
-   api
+   runners
    contributing
+   reference/index
