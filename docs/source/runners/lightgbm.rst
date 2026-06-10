@@ -56,5 +56,6 @@ API reference
 
 .. automodule:: protea_runners.lightgbm
    :members:
+   :inherited-members:
    :show-inheritance:
    :member-order: bysource

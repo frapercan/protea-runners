@@ -39,19 +39,18 @@ autodoc_typehints = "description"
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
-# protea_contracts is a git-dep not installed in the docs venv.
-# The heavy ML extras (lightgbm, pandas, scikit-learn) also live
-# behind extras and are mocked here.  When F2A.7 lands and the deps
-# are declared as proper package extras, this list shrinks.
+# ``protea-contracts``, ``numpy`` and ``pyarrow`` are real runtime deps
+# (installed by ``poetry install --with docs``), so they are introspected
+# rather than mocked: the contract base class and the inherited lifecycle
+# methods render with full type information. The heavy ML extras that land
+# behind ``protea-runners[lightgbm]`` in F2A.7 are mocked so the docs build
+# stays cheap and offline. When those become proper package extras the list
+# shrinks further.
 autodoc_mock_imports = [
-    "protea_contracts",
-    "lightgbm",
     "pandas",
     "sklearn",
     "faiss",
     "torch",
-    "numpy",
-    "pyarrow",
 ]
 
 intersphinx_mapping = {

@@ -33,5 +33,6 @@ API reference
 
 .. automodule:: protea_runners.knn
    :members:
+   :inherited-members:
    :show-inheritance:
    :member-order: bysource
