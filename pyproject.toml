@@ -7,13 +7,13 @@ name = "protea-runners"
 version = "0.0.1"
 description = "Experiment runner plugins for the PROTEA stack: LightGBM training, KNN baseline, future GNN and retrieval-neural runners."
 authors = ["Francisco Miguel Pérez Canales <frapercan1@gmail.com>"]
-license = "MIT"
+license = "Unlicense"
 readme = "README.md"
 packages = [{ include = "protea_runners", from = "src" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
