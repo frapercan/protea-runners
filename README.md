@@ -1,5 +1,11 @@
 # protea-runners
 
+[![CI](https://github.com/frapercan/protea-runners/actions/workflows/ci.yml/badge.svg)](https://github.com/frapercan/protea-runners/actions/workflows/ci.yml)
+[![Docs](https://github.com/frapercan/protea-runners/actions/workflows/docs.yml/badge.svg)](https://github.com/frapercan/protea-runners/actions/workflows/docs.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/protea-runners.svg)](https://pypi.org/project/protea-runners/)
+
 Experiment runner plugins for the
 [PROTEA](https://github.com/frapercan/PROTEA) stack.
 Each sub-module implements the `ExperimentRunner` ABC from
@@ -230,7 +236,9 @@ poetry run mypy --strict src tests
 poetry run python scripts/check_smells.py --target src
 ```
 
-Sphinx docs build:
+Published documentation: [https://frapercan.github.io/protea-runners/](https://frapercan.github.io/protea-runners/).
+
+Build the Sphinx docs locally:
 
 ```bash
 poetry install --with docs
