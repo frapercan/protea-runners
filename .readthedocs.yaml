@@ -1,0 +1,23 @@
+# Read the Docs build configuration for protea-runners.
+# Hosted at https://protea-runners.readthedocs.io (slug: protea-runners).
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.12"
+
+sphinx:
+  configuration: docs/source/conf.py
+  fail_on_warning: true
+
+python:
+  install:
+    # Install the package itself (pulls protea-contracts, numpy, pyarrow)
+    # so autodoc can introspect the runner classes.
+    - method: pip
+      path: .
+    # Sphinx, theme, and extensions live in a poetry docs group that pip
+    # cannot see, so the docs build deps are pinned in a requirements file.
+    - requirements: docs/requirements.txt

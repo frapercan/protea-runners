@@ -1,0 +1,7 @@
+# Documentation build dependencies for Read the Docs.
+# Mirrors the [tool.poetry.group.docs] dependencies in pyproject.toml,
+# which pip cannot resolve from the package metadata.
+sphinx>=7.3
+shibuya>=2024.10
+sphinx-copybutton>=0.5
+sphinx-design>=0.5
