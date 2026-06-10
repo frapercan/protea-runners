@@ -3,7 +3,7 @@
 [![CI](https://github.com/frapercan/protea-runners/actions/workflows/ci.yml/badge.svg)](https://github.com/frapercan/protea-runners/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/protea-runners.svg)](https://protea-runners.readthedocs.io)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](https://unlicense.org/)
 [![PyPI](https://img.shields.io/pypi/v/protea-runners.svg)](https://pypi.org/project/protea-runners/)
 
 Experiment runner plugins for the
@@ -276,4 +276,7 @@ developers. Notable changes are tracked in
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+Released into the public domain under [The Unlicense](https://unlicense.org/).
+See [`LICENSE`](LICENSE). You can copy, modify, publish, use, compile, sell, or
+distribute this software, for any purpose, commercial or non-commercial, and by
+any means.
