@@ -167,12 +167,12 @@ protea-runners/
                 __init__.py      # BaselineRunner + plugin instance
     docs/source/
         conf.py                  # Sphinx config (shibuya theme)
-        index.rst                # overview / landing page
+        index.rst                # narrative intro + what-lives-here map
+        overview.rst             # contract, shared base, entry-point discovery
         quickstart.rst           # install + discover + dispatch
-        contract.rst             # the runner contract + stub base
-        runners/                 # one RST per plugin, with autodoc
-        api.rst                  # consolidated API reference
-        contributing.rst         # how to add a runner
+        runners.rst              # per-runner guide + how to add a runner
+        contributing.rst         # conventions, workflow, CI gates
+        reference/index.rst      # generated API reference (autodoc)
     pyproject.toml               # entry_point registrations + extras
     tests/                       # ABC compliance + discoverability tests
 ```
@@ -186,8 +186,8 @@ nothing from `protea-core`.
 
 ## Adding a new runner
 
-The full guide is in the Sphinx docs under `docs/source/contributing.rst`.
-Five-step summary:
+The full guide is in the Sphinx docs under `docs/source/runners.rst`
+("How to add a runner"). Five-step summary:
 
 1. Create `src/protea_runners/<your_name>/__init__.py`.
 2. Subclass `ExperimentRunner` and implement `fit` + `evaluate` +

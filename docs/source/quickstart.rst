@@ -10,7 +10,8 @@ Install
 
 The package is dependency-light today (``protea-contracts``, ``numpy``,
 ``pyarrow``); the heavy ML stack for the LightGBM trainer lands behind a
-``protea-runners[lightgbm]`` extra alongside F2A.7.
+``protea-runners[lightgbm]`` extra alongside F2A.7. Nothing pulls in a
+GPU or ML framework at import time.
 
 Discover the registered runners
 -------------------------------
@@ -34,7 +35,7 @@ environment where the package is installed:
 Call the lifecycle
 ------------------
 
-Each plugin exposes the :doc:`runner contract <contract>` lifecycle.
+Each plugin exposes the :doc:`runner contract <overview>` lifecycle.
 Until the migrations land (F2A.7 for LightGBM, F2C for KNN) the methods
 are stubs that fail loud with a pointer to the active code path:
 
@@ -71,9 +72,12 @@ A run references a runner by name inside a
    )
    assert spec.runner == "lightgbm"
 
+The ``runner`` field is the dispatch key the worker uses to load the
+plugin; the remaining fields configure the run once the trainer is live.
+
 Next steps
 ----------
 
-- :doc:`contract` for the full lifecycle interface.
-- :doc:`runners/index` for per-runner roles, status and config.
+- :doc:`overview` for the full lifecycle interface and discovery model.
+- :doc:`runners` for per-runner roles, configuration and status.
 - :doc:`contributing` to add a runner of your own.

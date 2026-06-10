@@ -1,95 +1,67 @@
-Adding a new runner
-====================
+Contributing
+============
 
-Adding a runner plugin is a one-file commit in this repository plus
-one line in ``pyproject.toml``. The platform learns about the new
-runner through the ``protea.runners`` ``entry_points`` group.
-
-Five steps
-----------
-
-1. **Create a sub-module** under
-   ``src/protea_runners/<your_name>/__init__.py``. The directory name
-   is the canonical plugin name and must match the ``name`` class
-   attribute below.
-
-2. **Implement the contract.** Subclass
-   :class:`protea_contracts.ExperimentRunner` and provide ``fit``,
-   ``evaluate`` and ``export``. Each returns a typed result
-   object from ``protea-contracts``:
-
-   .. code-block:: python
-
-      from typing import Any
-      from protea_contracts import EvalResult, ExperimentRunner, RunResult
-
-      class MyRunner(ExperimentRunner):
-          name = "myrunner"
-
-          def fit(self, spec: dict[str, Any], dataset_uri: str, *, emit: Any) -> RunResult:
-              # Lazy import any heavy dependency here.
-              import lightgbm
-              ...
-              return RunResult(...)
-
-          def evaluate(
-              self, model_uri: str, eval_dataset_uri: str, *, emit: Any
-          ) -> EvalResult:
-              ...
-
-          def export(self, run_id: str, output_uri: str, *, emit: Any) -> dict[str, Any]:
-              ...
-
-      plugin = MyRunner()
-
-3. **Register the entry point.** In ``pyproject.toml`` add::
-
-      [tool.poetry.plugins."protea.runners"]
-      myrunner = "protea_runners.myrunner:plugin"
-
-4. **Declare extras** for any heavy ML dependency you brought in::
-
-      [tool.poetry.dependencies]
-      lightgbm = { version = ">=4.0", optional = true }
-
-      [tool.poetry.extras]
-      myrunner = ["lightgbm"]
-
-5. **Add tests** under ``tests/test_myrunner.py`` covering: instance
-   type, ABC compliance, ``name`` attribute, discoverability via
-   ``entry_points(group="protea.runners")``, and the public method
-   signatures. Existing test files are templates.
+The mechanics of adding a runner plugin are in
+:doc:`runners` under "How to add a runner". This page covers the
+conventions every runner honours and the development workflow.
 
 Conventions
 -----------
 
-- **Plugin imports are cheap.** Heavy ML imports go inside the
-  methods that need them, never at module top. Plugin discovery at
-  ``protea-core`` startup must stay free of GPU / DataFrame
+- **Plugin imports are cheap.** Heavy ML imports go inside the methods
+  that need them, never at module top. Plugin discovery at
+  ``protea-core`` startup must stay free of GPU and DataFrame
   dependencies.
-- **Schema sha is mandatory** for any runner that produces a
-  re-ranker booster. The runner must store
-  ``feature_schema_sha`` on the result so the platform can validate
-  schema alignment at inference time.
-- **Artifact-store URIs** are the boundary between training and
-  inference. ``export`` returns a URI; ``protea-core`` uses
-  ``ArtifactStore`` to download the artefact at registration time.
-  No filesystem paths cross the boundary.
-- **Reproducibility**: a runner's ``fit`` must record enough
-  provenance (commit SHA, dataset id, hyperparameters resolved from
-  defaults + payload, seeds) on the ``RunResult`` for an
-  ``ExperimentRun`` row to be replay-faithful within 1 % Fmax.
+- **Schema sha is mandatory** for any runner that produces a re-ranker
+  booster. Store ``feature_schema_sha`` on the result so the platform can
+  validate schema alignment at inference time.
+- **Artifact-store URIs are the boundary** between training and
+  inference. ``export`` returns a URI; ``protea-core`` downloads the
+  artefact through ``ArtifactStore`` at registration time. No filesystem
+  path crosses the boundary.
+- **Reproducibility.** A runner's ``fit`` must record enough provenance
+  (commit SHA, dataset id, hyperparameters resolved from defaults plus
+  payload, seeds) on the ``RunResult`` for an ``ExperimentRun`` row to
+  replay faithfully within 1 percent Fmax.
+- **Fail loudly.** A method that is not yet implemented raises
+  ``NotImplementedError`` with a precise pointer to the active code path
+  and the migration task, never a silent no-op. The
+  :class:`~protea_runners._base.StubRunner` base does this for you.
 
-CI expectations
----------------
+Development workflow
+--------------------
+
+All changes target ``develop``; ``main`` tracks stable releases only.
+
+.. code-block:: bash
+
+   git clone https://github.com/frapercan/protea-runners.git
+   cd protea-runners
+   git checkout develop
+   git checkout -b feature/my-runner
+
+   poetry install
+
+   # verify locally before opening a pull request
+   poetry run pytest
+   poetry run ruff check .
+   poetry run mypy --strict src tests
+   poetry run python scripts/check_smells.py --target src
+
+Open the pull request against ``develop``. Notable changes are tracked in
+``CHANGELOG.md``.
+
+CI gates
+--------
 
 The ``protea-runners`` repository CI runs ``ruff``, the smell-budget
-check, ``mypy`` strict and ``pytest`` (with a coverage floor; the
-contract-surface stubs sit at 100 %). A separate ``docs`` workflow builds
-the Sphinx site with warnings treated as errors.
+check, ``mypy`` strict, and ``pytest`` with a coverage floor (the
+contract-surface stubs sit at 100 percent). A separate ``docs`` workflow
+builds the Sphinx site with warnings treated as errors, so keep the docs
+build clean.
 
-Documentation
--------------
+Building the docs
+-----------------
 
 The Sphinx docs build is opt-in:
 
@@ -97,3 +69,4 @@ The Sphinx docs build is opt-in:
 
    poetry install --with docs
    cd docs && make html
+   # output: docs/build/html/index.html
