@@ -9,7 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # Matches the ">=3.12,<4.0" floor in pyproject.toml; older legs
+        # fail at `poetry install` because the dependency tree resolves
+        # only on 3.12+.
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}

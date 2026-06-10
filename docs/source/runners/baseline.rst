@@ -27,5 +27,6 @@ API reference
 
 .. automodule:: protea_runners.baseline
    :members:
+   :inherited-members:
    :show-inheritance:
    :member-order: bysource

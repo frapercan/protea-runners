@@ -26,16 +26,18 @@ Five steps
       class MyRunner(ExperimentRunner):
           name = "myrunner"
 
-          def fit(self, spec: dict[str, Any], *, emit: Any) -> RunResult:
+          def fit(self, spec: dict[str, Any], dataset_uri: str, *, emit: Any) -> RunResult:
               # Lazy import any heavy dependency here.
               import lightgbm
               ...
               return RunResult(...)
 
-          def evaluate(self, spec: dict[str, Any], *, emit: Any) -> EvalResult:
+          def evaluate(
+              self, model_uri: str, eval_dataset_uri: str, *, emit: Any
+          ) -> EvalResult:
               ...
 
-          def export(self, spec: dict[str, Any], *, emit: Any) -> dict[str, Any]:
+          def export(self, run_id: str, output_uri: str, *, emit: Any) -> dict[str, Any]:
               ...
 
       plugin = MyRunner()
@@ -81,10 +83,10 @@ Conventions
 CI expectations
 ---------------
 
-The ``protea-runners`` repository CI runs ``ruff``, ``mypy`` strict
-and ``pytest`` with 100 % coverage on the contract-surface stubs.
-Once F2A.7 lands the lightgbm trainer, the gate drops to 80 % to
-reflect the larger surface that the trainer brings in.
+The ``protea-runners`` repository CI runs ``ruff``, the smell-budget
+check, ``mypy`` strict and ``pytest`` (with a coverage floor; the
+contract-surface stubs sit at 100 %). A separate ``docs`` workflow builds
+the Sphinx site with warnings treated as errors.
 
 Documentation
 -------------
