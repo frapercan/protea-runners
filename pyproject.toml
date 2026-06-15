@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "protea-runners"
 version = "0.0.1"
 description = "Experiment runner plugins for the PROTEA stack: LightGBM training, KNN baseline, future GNN and retrieval-neural runners."
-authors = ["Francisco Miguel Pérez Canales <frapercan1@gmail.com>"]
+authors = ["Francisco Miguel Pérez Canales <frapercan1@alum.us.es>"]
 license = "Unlicense"
 readme = "README.md"
 packages = [{ include = "protea_runners", from = "src" }]
