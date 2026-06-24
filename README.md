@@ -14,11 +14,12 @@ and registers via the `protea.runners` `entry_points` group so that
 `protea-core` can discover and dispatch runners by name at runtime
 without a hard import dependency on this package.
 
-**Status:** v0.0.1, production. Entry points `lightgbm`, `knn`, and `baseline`
-are registered and discoverable. The implementations are contract-surface stubs;
-the active LightGBM training pipeline lives in
-[`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab) and
-migrates here in F2A.7.
+**Status:** v0.0.1, pre-release (interface-reserved). Entry points `lightgbm`,
+`knn`, and `baseline` are registered and discoverable, but the implementations
+are contract-surface stubs that raise `NotImplementedError`. The active LightGBM
+training pipeline currently lives in
+[`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); it is
+planned to migrate here.
 
 <!-- protea-stack:start -->
 
@@ -34,8 +35,8 @@ in PROTEA. Run `python scripts/sync_stack.py` to regenerate this block.
 | [protea-contracts](https://github.com/frapercan/protea-contracts) | Contracts | `active` | Shared contract surface. ABCs, pydantic payloads, feature schema, schema_sha. Imported by every other repo. |
 | [protea-method](https://github.com/frapercan/protea-method) | Inference | `active` | LAFA submission layer. Pure inference path (KNN, feature compute, reranker apply). Published to DockerHub; bind-mounted by LAFA containers. |
 | [protea-sources](https://github.com/frapercan/protea-sources) | Source plugin | `active` | Annotation source plugins (GOA, QuickGO, UniProt, InterPro). Discovered via Python entry_points. |
-| **protea-runners** (this repo) | Runner plugin | `active` | Experiment runner plugins (LightGBM, KNN, baseline). Entry points registered; real training lives in protea-reranker-lab (migrates here in F2A.7). |
-| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `active` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM3-C). Discovered via Python entry_points. |
+| **protea-runners** (this repo) | Runner plugin | `active` | Experiment runner plugins (LightGBM, KNN, baseline). Entry points registered; real training currently lives in protea-reranker-lab. |
+| [protea-backends](https://github.com/frapercan/protea-backends) | Backend plugin | `active` | Protein language model embedding backends (ESM family, T5/ProstT5, Ankh, ESM-C). Discovered via Python entry_points. |
 | [protea-reranker-lab](https://github.com/frapercan/protea-reranker-lab) | Lab | `active` | LightGBM reranker training lab. Pulls datasets from PROTEA, trains boosters, publishes them back via /reranker-models/import-by-reference. |
 | [cafaeval-protea](https://github.com/frapercan/cafaeval-protea) | Evaluator | `active` | Standalone fork of cafaeval (CAFA-evaluator-PK) with the PK-coverage fix and a bit-exact parity guarantee against the upstream. |
 
@@ -61,9 +62,8 @@ Keeping runners in a dedicated package has three advantages:
    accidentally claimed by another package. When the implementation
    migrates here, the dispatch layer does not change at all.
 3. **Fail loudly.** Each stub raises `NotImplementedError` with a
-   precise pointer to the active code path and the migration task.
-   Mis-routed dispatchers fail immediately with an actionable message,
-   not a silent no-op.
+   precise pointer to the active code path. Mis-routed dispatchers fail
+   immediately with an actionable message, not a silent no-op.
 
 ---
 
@@ -71,9 +71,9 @@ Keeping runners in a dedicated package has three advantages:
 
 | Plugin | Role | Status | Active code path until migration |
 |--------|------|--------|----------------------------------|
-| `lightgbm` | LightGBM reranker training | stub | [`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); migrates in F2A.7 |
-| `knn` | KNN-only baseline (no reranker) | stub | `protea-core.PredictGOTermsBatchOperation`; migrates in F2C |
-| `baseline` | Reference baselines (naive frequency, BLAST) | stub | reserved for F-EXP narrative work |
+| `lightgbm` | LightGBM reranker training | stub | [`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); planned to migrate here |
+| `knn` | KNN-only baseline (no reranker) | stub | `protea-core.PredictGOTermsBatchOperation`; planned to migrate here |
+| `baseline` | Reference baselines (naive frequency, BLAST) | stub | reserved for narrative baseline work |
 | `gnn` | R-GCN over GO-DAG (PROTEA-DL) | future | post-defensa |
 | `retrieval_neural` | Neural retrieval reranker | future | post-defensa |
 
@@ -85,7 +85,7 @@ Keeping runners in a dedicated package has three advantages:
 pip install protea-runners
 ```
 
-With optional heavy extras for the LightGBM runner (available once F2A.7 lands):
+With optional heavy extras for the LightGBM runner (reserved; available once the training implementation lands here):
 
 ```bash
 pip install "protea-runners[lightgbm]"
@@ -122,7 +122,7 @@ from protea_runners.lightgbm import plugin as lightgbm_runner
 lightgbm_runner.fit({}, "s3://bucket/dataset/", emit=lambda *a, **k: None)
 # NotImplementedError: LightgbmRunner.fit is a contract-surface stub.
 # The active training pipeline lives in the protea-reranker-lab repo;
-# absorbing it into this plugin is F2A.7 of the master plan.
+# absorbing it into this plugin is planned.
 ```
 
 The runner contract: `fit` takes a spec dict and a frozen dataset URI,
@@ -145,9 +145,9 @@ artefact to an `ArtifactStore` URI and returns a provenance dict.
 4. Results land as a new `RerankerModel` row (or equivalent) plus the
    `ExperimentRun` lifecycle metadata.
 
-The dispatch is in place via the F2B endpoints. What is missing is the
-inside of `fit`, `evaluate`, `export` for each runner: that lands in
-F2A.7 (LightGBM) and F2C (KNN).
+The dispatch path is in place. What is missing is the inside of `fit`,
+`evaluate`, `export` for each runner: those implementations are planned;
+training currently lives in protea-reranker-lab.
 
 ---
 
@@ -217,12 +217,12 @@ Key constraints:
 
 ## Roadmap
 
-| Phase | Task | Outcome |
-|-------|------|---------|
-| F2A.7 | LightGBM training migration | `protea-reranker-lab` absorbed into `protea_runners.lightgbm`. Real `fit`/`evaluate`/`export`. |
-| F2C.1 | `protea-method` extraction (KNN) | KNN inference path moves to `protea-method`; `protea_runners.knn` becomes a thin wrapper. |
-| F-EXP | Narrative baselines | `protea_runners.baseline` gets naive-frequency and BLAST implementations for ablation tables. |
-| Post-defensa | GNN, retrieval-neural | New plugin modules for PROTEA-DL research extensions. |
+| Task | Outcome |
+|------|---------|
+| LightGBM training migration | `protea-reranker-lab` absorbed into `protea_runners.lightgbm`. Real `fit`/`evaluate`/`export`. |
+| KNN inference extraction | KNN inference path moves to `protea-method`; `protea_runners.knn` becomes a thin wrapper. |
+| Narrative baselines | `protea_runners.baseline` gets naive-frequency and BLAST implementations for ablation tables. |
+| GNN, retrieval-neural | New plugin modules for PROTEA-DL research extensions. |
 
 ---
 
