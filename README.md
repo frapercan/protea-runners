@@ -14,9 +14,20 @@ and registers via the `protea.runners` `entry_points` group so that
 `protea-core` can discover and dispatch runners by name at runtime
 without a hard import dependency on this package.
 
-**Status:** v0.0.1, pre-release (interface-reserved). Entry points `lightgbm`,
-`knn`, and `baseline` are registered and discoverable, but the implementations
-are contract-surface stubs that raise `NotImplementedError`. The active LightGBM
+**Status:** interface reserved, not yet implemented. The entry points
+`lightgbm`, `knn` and `baseline` are registered and discoverable, and the
+implementations behind them are stubs that raise rather than pretend, which is
+the honest shape for a reserved interface.
+
+Every internal dependency in this stack now names a commit rather than a
+branch, checked on each pull request. Updating one is a pull request here that
+moves the commit, gated by this repository's own checks.
+
+A definitive campaign run is being prepared for the doctoral thesis, and
+earlier experimental results are being recomputed rather than carried forward.
+No headline number is quoted in this file as current.
+
+The active LightGBM
 training pipeline currently lives in
 [`protea-reranker-lab`](https://github.com/frapercan/protea-reranker-lab); it is
 planned to migrate here.
